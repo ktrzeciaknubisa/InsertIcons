@@ -60,6 +60,8 @@ namespace InsertIcons
 
         public static int Main(string[] args)
         {
+            bool replace = CheckReplace(ref args);
+
             if (args.Length == 0 || args.Length == 1 && Regex.IsMatch(args[0], @"^/(\?|h|help)$"))
             {
                 PrintUsage();
@@ -90,7 +92,7 @@ namespace InsertIcons
                         }
                     }
                 }
-                ushort iconMaxId = GetMaxIconId(assembly);
+                ushort iconMaxId = replace ? (ushort)0 : GetMaxIconId(assembly);
 
                 int groupIconIdCounter = StartIconId;
                 foreach (string icoFile in iconFiles)
@@ -146,7 +148,7 @@ namespace InsertIcons
                 ResourceId groupIconId = new ResourceId(Kernel32.ResourceTypes.RT_GROUP_ICON);
                 if (info.Resources.ContainsKey(groupIconId))
                 {
-                    return info.Resources[groupIconId].OfType<IconDirectoryResource>().Max(idr => idr.Icons.Max(icon => icon.Id));
+                    return info.Resources[groupIconId].OfType<IconDirectoryResource>().Min(idr => idr.Icons.Min(icon => icon.Id));
                 }
             }
             return 0;
@@ -255,6 +257,18 @@ Usage: InsertIcons <assemblyfile> <icons> [<keyfile>]
                   a file that was not signed before then the program 
                   will exit with an error message.
 ");
+        }
+
+        private static bool CheckReplace(ref string[] args)
+        {
+            var list = args.ToList();
+            int id = list.IndexOf("--replace");
+            if (id == -1)
+                return false;
+
+            list.RemoveAt(id);
+            args = list.ToArray();
+            return true;
         }
     }
 }
